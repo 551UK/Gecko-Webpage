@@ -100,8 +100,6 @@ jobs:
         if: always()
         with:
           name: Gecko-Webpage-IPA
-          path: |
-            Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
-            Gecko-Webpage-v0.1.0-Clone-Kit.zip
+          path: Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
           if-no-files-found: ignore
           retention-days: 14
