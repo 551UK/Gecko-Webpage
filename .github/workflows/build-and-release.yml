@@ -39,52 +39,63 @@ jobs:
           source .venv/bin/activate
           python -m pip install --upgrade pip
           python -m pip install 'Pillow>=10,<13'
-      - name: Build slim unsigned IPA
+      - name: Build four standalone Gecko-Webpage IPAs
         run: |
           set -euxo pipefail
           source .venv/bin/activate
-          python src/build_gecko_kiosk.py \
-            --ipa Reynard-Jailbroken.ipa \
-            --dylib GeckoKiosk.dylib \
-            --url https://google.com \
-            --name 'Gecko WebApp' \
-            --id kiosk1 \
-            --output Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
-      - name: Verify Gecko app package
+          for i in 1 2 3 4; do
+            python src/build_gecko_kiosk.py \
+              --ipa Reynard-Jailbroken.ipa \
+              --dylib GeckoKiosk.dylib \
+              --url https://google.com \
+              --name "Gecko WebApp $i" \
+              --id "kiosk$i" \
+              --output "Gecko-Webpage-$i.ipa"
+          done
+      - name: Verify all four apps have different bundle IDs
         run: |
           set -euxo pipefail
           python3 - <<'PY'
-          import plistlib,zipfile
-          ipa='Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa'
-          root='Payload/Reynard.app/'
-          with zipfile.ZipFile(ipa) as z:
-              assert z.testzip() is None
-              files=set(z.namelist())
-              for suffix in ('Frameworks/GeckoKiosk.dylib','GeckoSite.json','Reynard','PlugIns/Reynard Helper.appex/Reynard Helper','PlugIns/OpenIn.appex/OpenIn'):
-                  assert root+suffix in files,suffix
-              info=plistlib.loads(z.read(root+'Info.plist'))
-              assert info['CFBundleIdentifier']=='com.551uk.gwa.kiosk1'
-              shortcuts=info['UIApplicationShortcutItems']
-              assert [a['UIApplicationShortcutItemTitle'] for a in shortcuts]==['Change Website','Start New Session']
-              for ext in ('PlugIns/Reynard Helper.appex','PlugIns/OpenIn.appex'):
-                  data=plistlib.loads(z.read(root+ext+'/Info.plist'))
-                  assert data['CFBundleIdentifier'].startswith('com.551uk.gwa.kiosk1')
-              assert len(files)>2500
-              print('Verified unsigned Gecko IPA with',len(files),'files')
+          import plistlib, zipfile
+          bundle_ids=[]
+          for i in range(1,5):
+              ipa=f'Gecko-Webpage-{i}.ipa'
+              root='Payload/Reynard.app/'
+              with zipfile.ZipFile(ipa) as z:
+                  assert z.testzip() is None, f'Corrupted {ipa}'
+                  files=set(z.namelist())
+                  for suffix in ('Frameworks/GeckoKiosk.dylib','GeckoSite.json','Reynard',
+                                 'PlugIns/Reynard Helper.appex/Reynard Helper','PlugIns/OpenIn.appex/OpenIn'):
+                      assert root+suffix in files, f'{ipa}: {suffix} missing'
+                  info=plistlib.loads(z.read(root+'Info.plist'))
+                  expected=f'com.551uk.gwa.kiosk{i}'
+                  assert info['CFBundleIdentifier']==expected, (ipa,info['CFBundleIdentifier'])
+                  assert info['CFBundleDisplayName']==f'Gecko WebApp {i}'
+                  assert [a['UIApplicationShortcutItemTitle'] for a in info['UIApplicationShortcutItems']] == [
+                      'Change Website','Start New Session'
+                  ]
+                  for extension in ('PlugIns/Reynard Helper.appex','PlugIns/OpenIn.appex'):
+                      ext=plistlib.loads(z.read(root+extension+'/Info.plist'))
+                      assert ext['CFBundleIdentifier'].startswith(expected+'.'), (ipa,extension,ext['CFBundleIdentifier'])
+                  assert len(files)>2500, f'{ipa}: missing Gecko resources'
+                  bundle_ids.append(info['CFBundleIdentifier'])
+              print('Verified',ipa,expected)
+          assert len(set(bundle_ids))==4
           PY
-          ls -lh Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
-          shasum -a 256 Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
-      - name: Remove obsolete clone kit from v0.1.0 release
+          ls -lh Gecko-Webpage-{1,2,3,4}.ipa
+          shasum -a 256 Gecko-Webpage-{1,2,3,4}.ipa
+      - name: Remove superseded single IPA and obsolete kit from release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          if gh release view v0.1.0 >/dev/null 2>&1 &&
-             gh release view v0.1.0 --json assets --jq '.assets[].name' |
-               grep -Fxq 'Gecko-Webpage-v0.1.0-Clone-Kit.zip'; then
-            gh release delete-asset v0.1.0 'Gecko-Webpage-v0.1.0-Clone-Kit.zip' --yes
-          fi
-      - name: Publish compiled IPA to GitHub Releases
+          for asset in 'Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa' 'Gecko-Webpage-v0.1.0-Clone-Kit.zip'; do
+            if gh release view v0.1.0 >/dev/null 2>&1 &&
+               gh release view v0.1.0 --json assets --jq '.assets[].name' | grep -Fxq "$asset"; then
+              gh release delete-asset v0.1.0 "$asset" --yes
+            fi
+          done
+      - name: Publish four IPA instances to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v0.1.0
@@ -93,13 +104,20 @@ jobs:
           draft: false
           fail_on_unmatched_files: true
           files: |
-            Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
+            Gecko-Webpage-1.ipa
+            Gecko-Webpage-2.ipa
+            Gecko-Webpage-3.ipa
+            Gecko-Webpage-4.ipa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: Gecko-Webpage-IPA
-          path: Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
+          name: Gecko-Webpage-Four-IPAs
+          path: |
+            Gecko-Webpage-1.ipa
+            Gecko-Webpage-2.ipa
+            Gecko-Webpage-3.ipa
+            Gecko-Webpage-4.ipa
           if-no-files-found: ignore
           retention-days: 14
