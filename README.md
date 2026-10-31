@@ -19,3 +19,5 @@ The custom long-press options appear when you **press and hold the app icon on t
 ## Multiple instances
 
 Four separate Gecko-Webpage IPAs are available in [Releases](https://github.com/551UK/Gecko-Webpage/releases), each with a different bundle ID. You can install them side by side as **Gecko WebApp 1, 2, 3 and 4**, with separate browsing sessions for each.
+
+You can also use compatible iOS tweaks to **change each app's Home Screen icon and displayed name**, helping it resemble the native app for that website (for example, eBay or Discord). This changes its appearance, not the website's functionality.
