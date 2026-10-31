@@ -18,4 +18,4 @@ The custom long-press options appear when you **press and hold the app icon on t
 
 ## Multiple instances
 
-To create multiple instances, you can use an app-cloning tool such as **[Duppy](https://github.com/ZonD80/duppy)** to duplicate the IPA with a different bundle ID, giving each copy its own Home Screen icon. Duppy requires a compatible jailbreak/AppSync setup; Gecko's bundled helper extensions may need additional handling.
+Four separate Gecko-Webpage IPAs are available in [Releases](https://github.com/551UK/Gecko-Webpage/releases), each with a different bundle ID. You can install them side by side as **Gecko WebApp 1, 2, 3 and 4**, with separate browsing sessions for each.
