@@ -1,0 +1,107 @@
+name: Build and Release Gecko-Webpage IPA
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'README.md'
+      - 'RELEASE_NOTES.md'
+      - '.github/workflows/build-and-release.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    name: Build unsigned iOS IPA and publish GitHub Release
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile arm64 iOS Gecko runtime
+        run: |
+          set -euxo pipefail
+          SDK="$(xcrun --sdk iphoneos --show-sdk-path)"
+          xcrun --sdk iphoneos clang -arch arm64 -isysroot "$SDK" -miphoneos-version-min=13.0 \
+            -x objective-c -fobjc-arc -fblocks -dynamiclib \
+            -Wl,-install_name,@executable_path/Frameworks/GeckoKiosk.dylib \
+            src/GeckoKiosk.m -framework Foundation -framework UIKit -lobjc -o GeckoKiosk.dylib
+          file GeckoKiosk.dylib
+      - name: Download pinned Reynard 0.19.0 jailbroken IPA
+        run: |
+          set -euxo pipefail
+          curl -fL --retry 4 --retry-delay 4 \
+            https://github.com/minh-ton/reynard-browser/releases/download/0.19.0/Reynard-Jailbroken.ipa \
+            -o Reynard-Jailbroken.ipa
+          echo '85898f009c8920ed8a01f8478ef893c4704585a271b4d96c3688a4aa0cc21481  Reynard-Jailbroken.ipa' | shasum -a 256 --check
+      - name: Prepare Python and Pillow
+        run: |
+          set -euxo pipefail
+          python3 -m venv .venv
+          source .venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install 'Pillow>=10,<13'
+      - name: Build slim unsigned IPA
+        run: |
+          set -euxo pipefail
+          source .venv/bin/activate
+          python src/build_gecko_kiosk.py \
+            --ipa Reynard-Jailbroken.ipa \
+            --dylib GeckoKiosk.dylib \
+            --url https://google.com \
+            --name 'Gecko WebApp' \
+            --id kiosk1 \
+            --output Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
+      - name: Verify Gecko app package
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          import plistlib,zipfile
+          ipa='Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa'
+          root='Payload/Reynard.app/'
+          with zipfile.ZipFile(ipa) as z:
+              assert z.testzip() is None
+              files=set(z.namelist())
+              for suffix in ('Frameworks/GeckoKiosk.dylib','GeckoSite.json','Reynard','PlugIns/Reynard Helper.appex/Reynard Helper','PlugIns/OpenIn.appex/OpenIn'):
+                  assert root+suffix in files,suffix
+              info=plistlib.loads(z.read(root+'Info.plist'))
+              assert info['CFBundleIdentifier']=='com.551uk.gwa.kiosk1'
+              shortcuts=info['UIApplicationShortcutItems']
+              assert [a['UIApplicationShortcutItemTitle'] for a in shortcuts]==['Change Website','Start New Session']
+              for ext in ('PlugIns/Reynard Helper.appex','PlugIns/OpenIn.appex'):
+                  data=plistlib.loads(z.read(root+ext+'/Info.plist'))
+                  assert data['CFBundleIdentifier'].startswith('com.551uk.gwa.kiosk1')
+              assert len(files)>2500
+              print('Verified unsigned Gecko IPA with',len(files),'files')
+          PY
+          ls -lh Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
+          shasum -a 256 Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
+      - name: Assemble source and clone kit
+        run: |
+          set -euxo pipefail
+          zip -j -9 Gecko-Webpage-v0.1.0-Clone-Kit.zip \
+            src/build_gecko_kiosk.py src/GeckoKiosk.m GeckoKiosk.dylib README.md LICENSE RELEASE_NOTES.md
+      - name: Publish IPA and clone kit to GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euxo pipefail
+          if gh release view v0.1.0 >/dev/null 2>&1; then
+            gh release upload v0.1.0 Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa \
+              Gecko-Webpage-v0.1.0-Clone-Kit.zip --clobber
+          else
+            gh release create v0.1.0 \
+              Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa \
+              Gecko-Webpage-v0.1.0-Clone-Kit.zip \
+              --title 'Gecko-Webpage v0.1.0 (Experimental)' \
+              --notes-file RELEASE_NOTES.md \
+              --target "$GITHUB_SHA"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Gecko-Webpage-Release-Files
+          path: |
+            Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
+            Gecko-Webpage-v0.1.0-Clone-Kit.zip
+          if-no-files-found: ignore
+          retention-days: 14
