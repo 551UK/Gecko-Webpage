@@ -1,0 +1,40 @@
+name: Publish Gecko-Webpage from built artifact
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publish-release.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download already built and validated IPA and clone kit
+        uses: actions/download-artifact@v4
+        with:
+          name: Gecko-Webpage-Release-Files
+          run-id: 41156579431
+          github-token: ${{ github.token }}
+          path: release-assets
+      - name: Verify release files exist
+        run: |
+          set -euxo pipefail
+          ls -lah release-assets
+          test -s release-assets/Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
+          test -s release-assets/Gecko-Webpage-v0.1.0-Clone-Kit.zip
+      - name: Create release using maintained GitHub release action
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.0
+          name: Gecko-Webpage v0.1.0 (Experimental)
+          body_path: RELEASE_NOTES.md
+          draft: false
+          fail_on_unmatched_files: true
+          files: |
+            release-assets/Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
+            release-assets/Gecko-Webpage-v0.1.0-Clone-Kit.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
