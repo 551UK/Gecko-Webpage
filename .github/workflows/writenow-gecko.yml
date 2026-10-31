@@ -1,0 +1,33 @@
+name: Build Write Now Gecko Companion
+on:
+  push:
+    branches: [writenow-gecko-companion]
+    paths:
+      - 'writenow-gecko-companion/**'
+      - '.github/workflows/writenow-gecko.yml'
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: beerpiss/theos-action@v1
+        with:
+          theos-sdks: https://github.com/theos/sdks
+      - name: Build package
+        working-directory: writenow-gecko-companion
+        run: |
+          export THEOS="$GITHUB_WORKSPACE/theos"
+          make clean package FINALPACKAGE=1
+          ls -lh packages/*.deb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: writenow-gecko-companion-rootless
+          path: writenow-gecko-companion/packages/*.deb
+      - name: Publish experimental release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create writenow-gecko-test-v0.1 writenow-gecko-companion/packages/*.deb --title "Write Now Gecko Companion test v0.1" --notes "Experimental, untested rootless companion. Existing apps untouched."

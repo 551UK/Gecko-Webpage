@@ -1,0 +1,8 @@
+Package: uk.551.writenowgeckocompanion
+Name: Write Now Gecko Companion
+Version: 0.1.0
+Architecture: iphoneos-arm64
+Maintainer: 551UK
+Section: Tweaks
+Description: Experimental Gecko text-field compatibility for the original Write Now 2.4 interface.
+Depends: firmware (>= 15.0), mobilesubstrate, wiki.qaq.writenow (>= 2.4)
