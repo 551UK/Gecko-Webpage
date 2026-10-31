@@ -7,11 +7,14 @@ Gecko-based fullscreen web app for older iOS versions, particularly where offici
 - **Change Website** Home Screen icon long-press action: opens an in-app URL prompt and saves your homepage.
 - **Start New Session** Home Screen long-press action: immediately opens the chosen homepage, without deleting logins/cookies.
 - Normal app opening restores the last browsing session.
-- Multiple instances are possible through third-party IPA-cloning tools such as [Duppy](https://github.com/ZonD80/duppy), subject to jailbreak compatibility.
+- Four separately installable instances, each with its own bundle identifier and browsing data.
 - Slim package retains core Gecko libraries while trimming optional localisation/hyphenation files.
 
 ### Downloads
-- `Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa` — experimental Gecko WebApp for compatible TrollStore installations.
+- `Gecko-Webpage-1.ipa` — `com.551uk.gwa.kiosk1` (Gecko WebApp 1)
+- `Gecko-Webpage-2.ipa` — `com.551uk.gwa.kiosk2` (Gecko WebApp 2)
+- `Gecko-Webpage-3.ipa` — `com.551uk.gwa.kiosk3` (Gecko WebApp 3)
+- `Gecko-Webpage-4.ipa` — `com.551uk.gwa.kiosk4` (Gecko WebApp 4)
 - Source and build files are available in the [repository](https://github.com/551UK/Gecko-Webpage/tree/main/src).
 
 ### Warnings
