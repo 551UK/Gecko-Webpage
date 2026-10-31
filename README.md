@@ -15,3 +15,7 @@ It is especially useful on **older iOS versions**, where official apps may no lo
 - **Independent clones:** By repackaging the IPA with a different bundle ID and optionally a custom icon, you can install multiple separate website apps side by side. Each correctly installed clone has its own data container/session.
 
 The custom long-press options appear when you **press and hold the app icon on the iPhone Home Screen**. There is no hidden three-finger gesture or in-app browser settings menu. iOS may also show its own standard Home Screen actions.
+
+## Multiple instances
+
+You can **clone the IPA yourself** with an app-cloning tweak or IPA editing tool. Give each copy a **unique bundle ID** so it installs separately on your Home Screen. Alternatively, **Crane** can create separate data containers for different accounts or sessions within one installed app; it does not create extra standalone Home Screen apps by itself.
