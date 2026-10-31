@@ -13,7 +13,7 @@ It's particularly useful on **older iOS versions**, where official apps may be o
   - **Change Website:** Opens the app with a URL prompt to save and load a new homepage.
   - **Start New Session:** Opens your saved homepage directly, without clearing cookies, logins or browser history.
 
-The options appear when you **press and hold the app icon on the Home Screen**, not through a gesture inside the app. iOS may also show its standard Home Screen actions.
+The options appear when you **press and hold the app icon on the Home Screen**
 
 ## Multiple instances
 
