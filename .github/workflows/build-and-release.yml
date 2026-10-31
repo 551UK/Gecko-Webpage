@@ -74,12 +74,17 @@ jobs:
           PY
           ls -lh Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
           shasum -a 256 Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
-      - name: Assemble source and clone kit
+      - name: Remove obsolete clone kit from v0.1.0 release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euxo pipefail
-          zip -j -9 Gecko-Webpage-v0.1.0-Clone-Kit.zip \
-            src/build_gecko_kiosk.py src/GeckoKiosk.m GeckoKiosk.dylib README.md LICENSE RELEASE_NOTES.md
-      - name: Publish compiled IPA and clone kit to GitHub Releases
+          set -euo pipefail
+          if gh release view v0.1.0 >/dev/null 2>&1 &&
+             gh release view v0.1.0 --json assets --jq '.assets[].name' |
+               grep -Fxq 'Gecko-Webpage-v0.1.0-Clone-Kit.zip'; then
+            gh release delete-asset v0.1.0 'Gecko-Webpage-v0.1.0-Clone-Kit.zip' --yes
+          fi
+      - name: Publish compiled IPA to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v0.1.0
@@ -89,13 +94,12 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
-            Gecko-Webpage-v0.1.0-Clone-Kit.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: Gecko-Webpage-Release-Files
+          name: Gecko-Webpage-IPA
           path: |
             Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
             Gecko-Webpage-v0.1.0-Clone-Kit.zip
