@@ -4,7 +4,6 @@ on:
     branches: [main]
     paths:
       - 'src/**'
-      - 'README.md'
       - 'RELEASE_NOTES.md'
       - '.github/workflows/build-and-release.yml'
   workflow_dispatch:
@@ -80,22 +79,19 @@ jobs:
           set -euxo pipefail
           zip -j -9 Gecko-Webpage-v0.1.0-Clone-Kit.zip \
             src/build_gecko_kiosk.py src/GeckoKiosk.m GeckoKiosk.dylib README.md LICENSE RELEASE_NOTES.md
-      - name: Publish IPA and clone kit to GitHub Releases
+      - name: Publish compiled IPA and clone kit to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.0
+          name: Gecko-Webpage v0.1.0 (Experimental)
+          body_path: RELEASE_NOTES.md
+          draft: false
+          fail_on_unmatched_files: true
+          files: |
+            Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa
+            Gecko-Webpage-v0.1.0-Clone-Kit.zip
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euxo pipefail
-          if gh release view v0.1.0 >/dev/null 2>&1; then
-            gh release upload v0.1.0 Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa \
-              Gecko-Webpage-v0.1.0-Clone-Kit.zip --clobber
-          else
-            gh release create v0.1.0 \
-              Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa \
-              Gecko-Webpage-v0.1.0-Clone-Kit.zip \
-              --title 'Gecko-Webpage v0.1.0 (Experimental)' \
-              --notes-file RELEASE_NOTES.md \
-              --target "$GITHUB_SHA"
-          fi
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
