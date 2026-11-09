@@ -4,11 +4,14 @@
 
 static NSString *kHome = @"GeckoKiosk.homepage", *kStarted = @"GeckoKiosk.didBootstrap";
 static NSURL *pendingURL;
-static BOOL configured = NO, attached = NO, firstAppearance = NO;
-static UIView *webContent = nil;
-static UIView *chromeView = nil, *tabOverview = nil;
+static BOOL configured = NO, firstAppearance = NO;
 static IMP originalLoad = NULL, originalLayout = NULL, originalAppear = NULL, originalConnect = NULL, originalShortcut = NULL;
 static NSString *defaultHomepage = @"https://google.com";
+
+// Implemented in GeckoKioskFixes.m. Applies only to Gecko-Webpage.
+extern void CGInstallImprovements(void);
+extern void CGApplyFullscreen(UIViewController *controller);
+extern void CGRepairRestoredTabIfNecessary(NSString *homepage);
 
 @interface GeckoURLContext : UIOpenURLContext @end
 @implementation GeckoURLContext
@@ -94,34 +97,7 @@ static void sceneShortcut(id self, SEL cmd, UIWindowScene *scene,
     }
 }
 static void fill(UIViewController *c) {
-    if (!configured) return;
-    UIView *root=c.view;
-    for (UIView *v in root.subviews) {
-        NSString *name=NSStringFromClass(v.class);
-        if ([name containsString:@"BrowserChrome"]) chromeView=v;
-        else if ([name containsString:@"TabOverview"]) tabOverview=v;
-        else if ([name hasSuffix:@"ContentView"]) webContent=v;
-    }
-    chromeView.hidden=YES; tabOverview.hidden=YES;
-    if (!webContent) return;
-    // Drop the two original constraints reserving room for the address bar
-    // and bottom toolbar; keep horizontal constraints.
-    for (NSLayoutConstraint *cons in root.constraints) {
-        if (!cons.isActive) continue;
-        if (cons.firstItem!=webContent && cons.secondItem!=webContent) continue;
-        BOOL vertical=cons.firstAttribute==NSLayoutAttributeTop || cons.firstAttribute==NSLayoutAttributeBottom ||
-                      cons.secondAttribute==NSLayoutAttributeTop || cons.secondAttribute==NSLayoutAttributeBottom;
-        if (!vertical) continue;
-        BOOL rootPair=(cons.firstItem==root && cons.secondItem==webContent) || (cons.firstItem==webContent && cons.secondItem==root);
-        if (!rootPair) cons.active=NO;
-    }
-    if (!attached) {
-        [NSLayoutConstraint activateConstraints:@[
-           [webContent.topAnchor constraintEqualToAnchor:root.topAnchor],
-           [webContent.bottomAnchor constraintEqualToAnchor:root.bottomAnchor]
-        ]];
-        attached=YES;
-    }
+    if (configured) CGApplyFullscreen(c);
 }
 static void didLoad(id self,SEL _cmd) {
     ((void(*)(id,SEL))originalLoad)(self,_cmd);
@@ -156,6 +132,11 @@ __attribute__((constructor)) static void startKiosk(void){
         defaultHomepage=json[@"homepage"] ?: defaultHomepage;configured=YES;
         NSUserDefaults *d=NSUserDefaults.standardUserDefaults;
         [d setObject:@"lastTab" forKey:@"default.HomepageSettings.openingScreen"];
+        // Prevent Reynard's dynamic toolbar from reserving phantom space.
+        [d setBool:NO forKey:@"default.AppearanceSettings.scrollToHideToolbarEnabled"];
+        // Fix only the damaged selected session; preserve valid last tabs.
+        CGRepairRestoredTabIfNecessary(homepage());
+        CGInstallImprovements();
         Class cls=NSClassFromString(@"Reynard.BrowserViewController");
         if (!cls) {
             unsigned int count=0;Class *classes=objc_copyClassList(&count);
