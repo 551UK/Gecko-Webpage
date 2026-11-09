@@ -23,8 +23,10 @@ jobs:
           xcrun --sdk iphoneos clang -arch arm64 -isysroot "$SDK" -miphoneos-version-min=13.0 \
             -x objective-c -fobjc-arc -fblocks -dynamiclib \
             -Wl,-install_name,@executable_path/Frameworks/GeckoKiosk.dylib \
-            src/GeckoKiosk.m src/GeckoKioskFixes.m -framework Foundation -framework UIKit -framework CoreGraphics -lobjc -lsqlite3 -o GeckoKiosk.dylib
+            src/GeckoKiosk.m src/GeckoKioskFixes.m src/GeckoKioskRuntime.m -framework Foundation -framework UIKit -framework CoreGraphics -lobjc -lsqlite3 -o GeckoKiosk.dylib
           file GeckoKiosk.dylib
+          xcrun nm -gU GeckoKiosk.dylib | grep -q '_CGInstallRuntimeRecovery'
+          xcrun nm -gU GeckoKiosk.dylib | grep -q '_CGKioskRecoverHome'
       - name: Download pinned Reynard 0.19.0 jailbroken IPA
         run: |
           set -euxo pipefail
@@ -87,8 +89,8 @@ jobs:
       - name: Publish four IPA instances to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.2.0
-          name: Gecko-Webpage v0.2.0 (Fullscreen and session fixes)
+          tag_name: v0.2.1
+          name: Gecko-Webpage v0.2.1 (Runtime navigation recovery)
           body_path: RELEASE_NOTES.md
           draft: false
           fail_on_unmatched_files: true
