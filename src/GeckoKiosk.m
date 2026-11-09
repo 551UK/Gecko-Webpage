@@ -12,6 +12,7 @@ static NSString *defaultHomepage = @"https://google.com";
 extern void CGInstallImprovements(void);
 extern void CGApplyFullscreen(UIViewController *controller);
 extern void CGRepairRestoredTabIfNecessary(NSString *homepage);
+extern void CGInstallRuntimeRecovery(void);
 
 @interface GeckoURLContext : UIOpenURLContext @end
 @implementation GeckoURLContext
@@ -38,6 +39,11 @@ static void navigate(UIViewController *c, NSString *string) {
     GeckoURLContext *ctx=class_createInstance(GeckoURLContext.class,0);
     [delegate scene:scene openURLContexts:[NSSet setWithObject:ctx]];
 }
+// Called only when a visible Unknown Protocol error did not recover by Back.
+void CGKioskRecoverHome(UIViewController *c) {
+    if (configured && c && c.view.window) navigate(c, homepage());
+}
+
 static void promptURL(UIViewController *c) {
     UIAlertController *a=[UIAlertController alertControllerWithTitle:@"Website URL" message:@"Change this Gecko app's homepage." preferredStyle:UIAlertControllerStyleAlert];
     [a addTextFieldWithConfigurationHandler:^(UITextField *f){f.text=homepage();f.keyboardType=UIKeyboardTypeURL;f.placeholder=@"https://example.com";}];
@@ -100,6 +106,7 @@ static void fill(UIViewController *c) {
     if (configured) CGApplyFullscreen(c);
 }
 static void didLoad(id self,SEL _cmd) {
+    CGInstallRuntimeRecovery();
     ((void(*)(id,SEL))originalLoad)(self,_cmd);
     fill(self);
     [self setNeedsStatusBarAppearanceUpdate];
@@ -137,6 +144,7 @@ __attribute__((constructor)) static void startKiosk(void){
         // Fix only the damaged selected session; preserve valid last tabs.
         CGRepairRestoredTabIfNecessary(homepage());
         CGInstallImprovements();
+        CGInstallRuntimeRecovery();
         Class cls=NSClassFromString(@"Reynard.BrowserViewController");
         if (!cls) {
             unsigned int count=0;Class *classes=objc_copyClassList(&count);
