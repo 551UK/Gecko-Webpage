@@ -1,23 +1,22 @@
-# Gecko-Webpage v0.1.0 — experimental
+# Gecko-Webpage v0.2.0 — fullscreen and session fixes
 
-Gecko-based fullscreen web app for older iOS versions, particularly where official apps may be unsupported or limited. It can mimic the app-like experience of sites such as eBay, ChatGPT, Discord and Google using their websites.
+Gecko-based standalone website app using Reynard 0.19.0, designed for older iOS versions.
 
-### Features
-- Fullscreen Gecko website display (based on Reynard 0.19.0; not WebKit).
-- **Change Website** Home Screen icon long-press action: opens an in-app URL prompt and saves your homepage.
-- **Start New Session** Home Screen long-press action: immediately opens the chosen homepage, without deleting logins/cookies.
-- Normal app opening restores the last browsing session.
-- Four separately installable instances, each with its own bundle identifier and browsing data.
-- Slim package retains core Gecko libraries while trimming optional localisation/hyphenation files.
+## Changes
+- Prevent hidden address bars, browser overlays and their gestures from intercepting taps.
+- Return the invisible bottom toolbar's height as zero and disable dynamic scroll-to-hide toolbar insets.
+- Reapply edge-to-edge webpage layout after Reynard changes its native view constraints.
+- On launch, recover from a selected saved tab containing an unsupported URL scheme or the Reddit `dhan.go.link?rdt_cid=` ad redirect. The affected tab is sent to the configured homepage.
+- Remove other saved regular tabs matching that **specific reported ad redirect**; do not clear general browsing data.
+- Preserve normal last-tab restoration, valid tabs, sessions, cookies, logins, and the original two Home Screen quick actions.
+- Retain four independently installable app instances, each with its own bundle ID and container.
 
-### Downloads
-- `Gecko-Webpage-1.ipa` — `com.551uk.gwa.kiosk1` (Gecko WebApp 1)
-- `Gecko-Webpage-2.ipa` — `com.551uk.gwa.kiosk2` (Gecko WebApp 2)
-- `Gecko-Webpage-3.ipa` — `com.551uk.gwa.kiosk3` (Gecko WebApp 3)
-- `Gecko-Webpage-4.ipa` — `com.551uk.gwa.kiosk4` (Gecko WebApp 4)
-- Source and build files are available in the [repository](https://github.com/551UK/Gecko-Webpage/tree/main/src).
+## Four unsigned IPAs
+- `Gecko-Webpage-1.ipa` — `com.551uk.gwa.kiosk1`
+- `Gecko-Webpage-2.ipa` — `com.551uk.gwa.kiosk2`
+- `Gecko-Webpage-3.ipa` — `com.551uk.gwa.kiosk3`
+- `Gecko-Webpage-4.ipa` — `com.551uk.gwa.kiosk4`
 
-### Warnings
-**Experimental and unsigned.** The runtime and IPA structure are compiled/validated in CI, but an actual iPhone test has not yet verified launch, callback handling and full-screen behaviour. Back up anything important before installing. Built from upstream Reynard 0.19.0 jailbroken IPA; inherited entitlements can affect Apps Manager visibility.
+Source and build scripts: [Gecko-Webpage](https://github.com/551UK/Gecko-Webpage/tree/main/src).
 
-Credits: [Reynard Browser](https://github.com/minh-ton/reynard-browser), GPL-3.0. Source changes are available in this repository.
+**Experimental / unsigned:** GitHub Actions compiles and checks IPA structure; behaviour still requires testing on a compatible jailbroken iPhone or TrollStore-enabled device. No default forced GPU/JIT or site-specific Gemini CSS tweaks are included: those could cause instability or break other websites.
