@@ -1,5 +1,7 @@
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
+#import <string.h>
+#import <stdlib.h>
 
 // Detect the native Reynard 0.19.0 error view while the app is running.
 // This is intentionally restricted to Unknown Protocol, not normal HTTP,
