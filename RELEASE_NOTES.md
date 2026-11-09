@@ -1,15 +1,19 @@
-# Gecko-Webpage v0.2.0 — fullscreen and session fixes
+# Gecko-Webpage v0.2.1 — runtime Unknown Protocol recovery
 
-Gecko-based standalone website app using Reynard 0.19.0, designed for older iOS versions.
+Experimental Gecko-based standalone website app using Reynard 0.19.0.
 
-## Changes
-- Prevent hidden address bars, browser overlays and their gestures from intercepting taps.
-- Return the invisible bottom toolbar's height as zero and disable dynamic scroll-to-hide toolbar insets.
-- Reapply edge-to-edge webpage layout after Reynard changes its native view constraints.
-- On launch, recover from a selected saved tab containing an unsupported URL scheme or the Reddit `dhan.go.link?rdt_cid=` ad redirect. The affected tab is sent to the configured homepage.
-- Remove other saved regular tabs matching that **specific reported ad redirect**; do not clear general browsing data.
-- Preserve normal last-tab restoration, valid tabs, sessions, cookies, logins, and the original two Home Screen quick actions.
-- Retain four independently installable app instances, each with its own bundle ID and container.
+## What's new
+- Detect **Unknown Protocol** error screens while browsing, not just during launch.
+- Where Reynard's native Back control is available, try that first so the user stays on the previous website.
+- If the error remains, automatically open this instance's saved homepage; protect against repeat-trigger loops for the same error presentation.
+- Only this specific error triggers the recovery; SSL, certificate, offline, and ordinary website errors are unchanged.
+- Preserve the four independent bundle IDs and separate cookies/logins; no app data is wiped.
+
+## Retained from v0.2.0
+- Fullscreen hidden-toolbar and zero-bottom-height fixes.
+- Hidden native controls no longer intercept touches.
+- Targeted startup recovery from unsupported saved schemes and the reported Reddit ad redirect.
+- Last-session restoration and the two original Home Screen long-press shortcuts.
 
 ## Four unsigned IPAs
 - `Gecko-Webpage-1.ipa` — `com.551uk.gwa.kiosk1`
@@ -17,6 +21,4 @@ Gecko-based standalone website app using Reynard 0.19.0, designed for older iOS 
 - `Gecko-Webpage-3.ipa` — `com.551uk.gwa.kiosk3`
 - `Gecko-Webpage-4.ipa` — `com.551uk.gwa.kiosk4`
 
-Source and build scripts: [Gecko-Webpage](https://github.com/551UK/Gecko-Webpage/tree/main/src).
-
-**Experimental / unsigned:** GitHub Actions compiles and checks IPA structure; behaviour still requires testing on a compatible jailbroken iPhone or TrollStore-enabled device. No default forced GPU/JIT or site-specific Gemini CSS tweaks are included: those could cause instability or break other websites.
+**Testing:** Built and ZIP-structure validated in GitHub Actions. Runtime recovery relies on Reynard 0.19.0's native error view and must still be checked on a real iPhone. An optional Swift private-ivar Back handler is guarded by runtime checks; homepage recovery is the fallback. The apps are unsigned and intended for compatible signing/installation workflows.
