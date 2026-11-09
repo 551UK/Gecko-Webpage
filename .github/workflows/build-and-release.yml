@@ -23,7 +23,7 @@ jobs:
           xcrun --sdk iphoneos clang -arch arm64 -isysroot "$SDK" -miphoneos-version-min=13.0 \
             -x objective-c -fobjc-arc -fblocks -dynamiclib \
             -Wl,-install_name,@executable_path/Frameworks/GeckoKiosk.dylib \
-            src/GeckoKiosk.m -framework Foundation -framework UIKit -lobjc -o GeckoKiosk.dylib
+            src/GeckoKiosk.m src/GeckoKioskFixes.m -framework Foundation -framework UIKit -lobjc -lsqlite3 -o GeckoKiosk.dylib
           file GeckoKiosk.dylib
       - name: Download pinned Reynard 0.19.0 jailbroken IPA
         run: |
@@ -84,22 +84,11 @@ jobs:
           PY
           ls -lh Gecko-Webpage-{1,2,3,4}.ipa
           shasum -a 256 Gecko-Webpage-{1,2,3,4}.ipa
-      - name: Remove superseded single IPA and obsolete kit from release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          for asset in 'Gecko-Webpage-v0.1.0-TrollStore-UNSIGNED.ipa' 'Gecko-Webpage-v0.1.0-Clone-Kit.zip'; do
-            if gh release view v0.1.0 >/dev/null 2>&1 &&
-               gh release view v0.1.0 --json assets --jq '.assets[].name' | grep -Fxq "$asset"; then
-              gh release delete-asset v0.1.0 "$asset" --yes
-            fi
-          done
       - name: Publish four IPA instances to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.1.0
-          name: Gecko-Webpage v0.1.0 (Experimental)
+          tag_name: v0.2.0
+          name: Gecko-Webpage v0.2.0 (Fullscreen and session fixes)
           body_path: RELEASE_NOTES.md
           draft: false
           fail_on_unmatched_files: true
