@@ -23,7 +23,7 @@ jobs:
           xcrun --sdk iphoneos clang -arch arm64 -isysroot "$SDK" -miphoneos-version-min=13.0 \
             -x objective-c -fobjc-arc -fblocks -dynamiclib \
             -Wl,-install_name,@executable_path/Frameworks/GeckoKiosk.dylib \
-            src/GeckoKiosk.m src/GeckoKioskFixes.m -framework Foundation -framework UIKit -lobjc -lsqlite3 -o GeckoKiosk.dylib
+            src/GeckoKiosk.m src/GeckoKioskFixes.m -framework Foundation -framework UIKit -framework CoreGraphics -lobjc -lsqlite3 -o GeckoKiosk.dylib
           file GeckoKiosk.dylib
       - name: Download pinned Reynard 0.19.0 jailbroken IPA
         run: |
